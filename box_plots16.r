@@ -569,14 +569,18 @@ barplot <- function(sampledata, varname, ylabel, ybreaks, yref1=NA, yref2=NA, yt
 print("making gelman box")
 runfile <- paste(out_path,'runrecord.tsv', sep='')
 runrecord <- read_tsv(runfile, col_types=cols())
-runrecord$setseqf <- factor(runrecord$setseq, levels=c(1:nruns))
-p1 <- barplot(runrecord, 'gelmanr', 'Gelman R\n', seq(0,1.5,0.5), 1.1, 1.0)
-temp <- ceiling(max(runrecord$elapsed, na.rm=TRUE))
-p2 <- barplot(runrecord, 'elapsed', 'Elapsed (h)\n', seq(0,temp,0.5), 0, 0)
-plotbox <- plot_grid(p1, p2, nrow=2, align="v")
-print(plotbox)
-file_name <- paste(out_path, 'box_', 'gelmanr', '.png', sep="")
-save_plot(file_name, plotbox, base_height=6, base_width=4)
+if (any(!is.na(runrecord$gelmanr)) & any(!is.na(runrecord$elapsed))){
+  runrecord$setseqf <- factor(runrecord$setseq, levels=c(1:nruns))
+  p1 <- barplot(runrecord, 'gelmanr', 'Gelman R\n', seq(0,1.5,0.5), 1.1, 1.0)
+  temp <- ceiling(max(runrecord$elapsed, na.rm=TRUE))
+  p2 <- barplot(runrecord, 'elapsed', 'Elapsed (h)\n', seq(0,temp,0.5), 0, 0)
+  plotbox <- plot_grid(p1, p2, nrow=2, align="v")
+  print(plotbox)
+  file_name <- paste(out_path, 'box_', 'gelmanr', '.png', sep="")
+  save_plot(file_name, plotbox, base_height=6, base_width=4)
+} else {
+  print("missing gelmanr or elapsed data")
+}
 
 # redefine boxplot stats
 custombox <- function(y) {
@@ -738,7 +742,7 @@ for (i in rows) {
   # print(plot1)
   png(paste0(out_path, "/", runlisti$setname, "_histogram.png"),
       width = 210 * 1.5, height = 210 * 1, units = "mm",
-      type = "windows", res = 600
+      type = "windows", res = 300 # FIXME res = 600
   )
   print(plot1)
   dev.off()

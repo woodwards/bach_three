@@ -1,5 +1,4 @@
-# translate runDREAMZS_hmixbatch.m into R
-# Simon Woodward, DairyNZ 2017-2018
+# Simon Woodward, DairyNZ 2017-20202
 # now allows keeping previous results or starting from scratch
 # save runlist including diagnostics
 # bach_driver11.r + bach_script11.stan: 
@@ -7,6 +6,7 @@
 # - unique name for log file
 # - increase weighting of llflow
 # - reorganise parameter trace plots
+# - explore second order filter to improve fit to flashy catchments
 
 # remove all variables
 rm(list=ls()) 
@@ -26,7 +26,7 @@ suppressMessages({
 "%notin%" <- function(x,y)!("%in%"(x,y))
 
 # which run directory?
-out_path <- 'run - new_trend3/'
+out_path <- 'run - three/'
 print(out_path)
 
 # kill any processes that didn't terminate
@@ -39,8 +39,9 @@ close(log_file)
 log_file <- file(log_file_name, open='a') # open file for logging
 
 # model and parameters
-stan_model <- paste(out_path, 'bach_script15.stan', sep='')
-stan_pars_raw <- c('medb0raw', 'medd1raw', 'slowb0raw', 'slowd1raw',
+stan_model <- paste(out_path, 'bach_script16.stan', sep='')
+stan_pars_raw <- c('medb0raw', 'medb1raw', 'medb2raw', 'medd1raw', 'meda2raw', 
+                   'slowb0raw', 'slowb1raw', 'slowb2raw', 'slowd1raw', 'slowa2raw',
                    'chem1fastraw0', 'chem1medraw0', 'chem1slowraw0', 
                    'chem2fastraw0', 'chem2medraw0', 'chem2slowraw0',
                    'chem1fastraw1', 'chem1medraw1', 'chem1slowraw1', 
@@ -49,13 +50,14 @@ stan_pars_raw <- c('medb0raw', 'medd1raw', 'slowb0raw', 'slowd1raw',
                    'chem2fastrawb1', 'chem2medrawb1', 'chem2slowrawb1',
                    'chem1fastrawb2', 'chem1medrawb2', 'chem1slowrawb2', 
                    'chem2fastrawb2', 'chem2medrawb2', 'chem2slowrawb2')
-stan_pars_scale <- c(1, ((-0.1*log(1-0.99)) - (-0.1*log(1-0.1))) * 10, # NOTE -ln(1-a) needs special scaling
-                     1, ((-0.1*log(1-0.9999)) - (-0.1*log(1-0.99))) * 10, # NOTE -ln(1-a) needs special scaling
+stan_pars_scale <- c(1, 1, 1, ((-0.1*log(1-0.99)) - (-0.1*log(1-0.1))) * 10, 1, # NOTE -ln(1-a) needs special scaling
+                     1, 1, 1, ((-0.1*log(1-0.9999)) - (-0.1*log(1-0.99))) * 10, 1, # NOTE -ln(1-a) needs special scaling
                      2, 2, 2, 12, 12, 12,
                      2, 2, 2, 12, 12, 12,
                      2, 2, 2, 12, 12, 12,
                      2, 2, 2, 12, 12, 12)
-stan_pars_label <- c('b0,m/(1-a1,m)', '-ln(1-a1,m)', 'b0,s/(1-a1,s)', '-ln(1-a1,s)',
+stan_pars_label <- c('b0,m/(1-a1,m)', 'relb1,m', 'relb2,m', '-ln(1-a1,m)', 'rela2,m', 
+                     'b0,s/(1-a1,s)', 'relb1,s', 'relb2,s', '-ln(1-a1,s)', 'rela2,s',
                      'e0,fTP', 'e0,mTP', 'e0,sTP', 
                      'e0,fTN', 'e0,mTN', 'e0,sTN',
                      'e1,fTP', 'e1,mTP', 'e1,sTP', 
@@ -64,7 +66,8 @@ stan_pars_label <- c('b0,m/(1-a1,m)', '-ln(1-a1,m)', 'b0,s/(1-a1,s)', '-ln(1-a1,
                      'f1,fTN', 'f1,mTN', 'f1,sTN', 
                      'f2,fTP', 'f2,mTP', 'f2,sTP', 
                      'f2,fTN', 'f2,mTN', 'f2,sTN')
-stan_pars <- c('medb0', 'meda1', 'slowb0', 'slowa1', 
+stan_pars <- c('medb0', 'medb1', 'medb2', 'meda1', 'meda2', 
+               'slowb0', 'slowb1', 'slowb2', 'slowa1', 'slowa2', 
                'medBFImax', 'medrec', 'slowBFImax', 'slowrec', 
                'chem1fast0', 'chem1med0', 'chem1slow0', 
                'chem2fast0', 'chem2med0', 'chem2slow0',
@@ -83,19 +86,22 @@ priortab <- tibble(
   parname = stan_pars_raw,
   parscale = stan_pars_scale,
   parlabel = stan_pars_label,
-  parmin  = c(rep(0, 4), rep(0, 12), rep(-1, 12)),
+  parmin  = c(rep(0, 10), rep(0, 12), rep(-1, 12)),
   parmax  = 1,
-  parmean = c(1.0, 0.4, 1.0, 0.7, 
+  parmean = c(1.0, 0.5, 0.5, 0.4, 0.0,
+              1.0, 0.5, 0.5, 0.7, 0.0,
               0.2/2.0, 0.1/2.0, 0.1/2.0, 2.0/12.0, 3.0/12.0, 1.0/12.0, 
               0.2/2.0, 0.1/2.0, 0.1/2.0, 2.0/12.0, 3.0/12.0, 1.0/12.0, 
               0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
               0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-  parsd   = c(priornarrow, priorwide, priornarrow, priorwide,
+  parsd   = c(priornarrow, priorwide, priorwide, priorwide, priornarrow, 
+              priornarrow, priorwide, priorwide, priorwide, priornarrow,
               rep(priorwide, 6), rep(priorwide, 6),
               rep(priornarrow, 6), rep(priornarrow, 6))
 )
 
 if (FALSE){
+  # distribition parameters to report for paper
   medd1raw <- c(0, 0.4, 1)
   ((-0.1*log(1-0.99)) - (-0.1*log(1-0.1))) * priorwide * 10
   medd1scale = (-0.1*log(1-0.1)) + ((-0.1*log(1-0.99)) - (-0.1*log(1-0.1))) * medd1raw
@@ -124,7 +130,8 @@ cat(paste(nrow(runlist),'lines in runlist.dat'), file=log_file, sep='\n')
 # prepare output files
 nruns <- nrow(runlist)
 from_scratch <- all(runlist$control %notin% "keep")
-source('prep_output9.r') 
+from_scratch <- TRUE # FIXME temporary
+source('prep_output10.r') 
 
 # loop through runlist
 rows <- 1:nruns # to run all sites
