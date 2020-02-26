@@ -8,7 +8,7 @@
 # - reorganise parameter trace plots
 # - explore second order filter to improve fit to flashy catchments
 
-# remove all variables
+# remove all variables 
 rm(list=ls()) 
 # dev.off() # close figures if they exist
 
