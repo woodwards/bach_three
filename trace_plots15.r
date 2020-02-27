@@ -695,6 +695,27 @@ for (i in rows) {
     }
 
     p4r3 <- ggplot() +
+      labs(title = "", y = "TP " ~ (mg ~ L^{-1}), x = "Flow " ~ (m^3 ~ s^{-1}), colour = "Percentile") +
+      theme_cowplot() +
+      theme(legend.position = "none", plot.margin = unit(c(0, 0.3, 0, 0), "cm"), plot.title = element_blank()) +
+      panel_border(colour = "black") +
+      # scale_colour_manual(values=c('orange','firebrick','darkred','firebrick','orange')) +
+      scale_colour_manual(values = tpcol[sort]) +
+      # scale_x_date(limits=daterange, date_labels='%Y', date_breaks='1 year') +
+      # scale_x_log10() +
+      scale_x_continuous(limits = range(adata$TF), breaks = flow_breaks(adata$TF)) +
+      # scale_x_continuous(limits = range(adata$TF[!is.na(adata$TP)])) +
+      coord_trans(x = "flow") +
+      # scale_y_continuous(expand=c(0, 0), breaks=TPbreaks) +
+      # coord_cartesian(ylim=TPlimits) +
+      geom_ribbon(data = y4s, mapping = aes(x = TF, ymin = TPmin - 0.02 * tci, ymax = TPmax + 0.02 * tci), colour = "lightgrey", fill = "lightgrey") +
+      geom_ribbon(data = y4s, mapping = aes(x = TF, ymin = TPmin, ymax = TPmax), colour = tpcol[1], fill = tpcol[1]) +
+      geom_ribbon(data = y4s, mapping = aes(x = TF, ymin = `25%`, ymax = `75%`), colour = tpcol[2], fill = tpcol[2]) +
+      geom_line(data = y4s, mapping = aes(x = TF, y = TPmed), colour = tpcol[3]) +
+      # geom_smooth(data=adata, mapping=aes(x=TPmed, y=TP), linetype=2, colour="black", method="loess") +
+      geom_point(data = adata, mapping = aes(x = TF, y = TP))
+    
+    p4r4 <- ggplot() +
       labs(title = "", y = "TP residual " ~ (mg ~ L^{-1}), x = "Flow " ~ (m^3 ~ s^{-1}), colour = "Percentile") +
       theme_cowplot() +
       theme(legend.position = "none", plot.margin = unit(c(0, 0.3, 0, 0), "cm"), plot.title = element_blank()) +
@@ -714,7 +735,7 @@ for (i in rows) {
       geom_line(data = y4s, mapping = aes(x = TF, y = TPmed - TPmed), colour = tpcol[3]) +
       # geom_smooth(data=adata, mapping=aes(x=TPmed, y=TP), linetype=2, colour="black", method="loess") +
       geom_point(data = adata, mapping = aes(x = TF, y = TP - TPmed))
-
+    
     p6 <- ggplot() +
       labs(title = "", y = "fTP " ~ (mg ~ L^{-1}), x = "", colour = "Percentile") +
       theme_cowplot() +
@@ -884,6 +905,26 @@ for (i in rows) {
       geom_point(data = adata, mapping = aes(x = TNmed, y = TN))
 
     p5r3 <- ggplot() +
+      labs(title = "", y = "TN " ~ (mg ~ L^{-1}), x = "Flow " ~ (m^3 ~ s^{-1}), colour = "Percentile") +
+      theme_cowplot() +
+      theme(legend.position = "none", plot.margin = unit(c(0, 0.3, 0, 0), "cm"), plot.title = element_blank()) +
+      panel_border(colour = "black") +
+      scale_colour_manual(values = tncol[sort]) +
+      # scale_x_date(limits=daterange, date_labels='%Y', date_breaks='1 year') +
+      # scale_x_log10() +
+      scale_x_continuous(limits = range(adata$TF), breaks = flow_breaks(adata$TF)) +
+      # scale_x_continuous(limits = range(adata$TF[!is.na(adata$TN)])) +
+      coord_trans(x = "flow") +
+      # scale_y_continuous(expand=c(0, 0), breaks=TNbreaks) +
+      # coord_cartesian(ylim=TNlimits) +
+      geom_ribbon(data = y5s, mapping = aes(x = TF, ymin = TNmin - 0.2 * tci, ymax = TNmax + 0.2 * tci), colour = "lightgrey", fill = "lightgrey") +
+      geom_ribbon(data = y5s, mapping = aes(x = TF, ymin = TNmin, ymax = TNmax), colour = tncol[1], fill = tncol[1]) +
+      geom_ribbon(data = y5s, mapping = aes(x = TF, ymin = `25%`, ymax = `75%`), colour = tncol[2], fill = tncol[2]) +
+      geom_line(data = y5s, mapping = aes(x = TF, y = TNmed), colour = tncol[3]) +
+      # geom_smooth(data=adata, mapping=aes(x=TF, y=TN), linetype=2, colour="black", method="loess") +
+      geom_point(data = adata, mapping = aes(x = TF, y = TN))
+    
+    p5r4 <- ggplot() +
       labs(title = "", y = "TN residual " ~ (mg ~ L^{-1}), x = "Flow " ~ (m^3 ~ s^{-1}), colour = "Percentile") +
       theme_cowplot() +
       theme(legend.position = "none", plot.margin = unit(c(0, 0.3, 0, 0), "cm"), plot.title = element_blank()) +
@@ -902,7 +943,7 @@ for (i in rows) {
       geom_line(data = y5s, mapping = aes(x = TF, y = TNmed - TNmed), colour = tncol[3]) +
       # geom_smooth(data=adata, mapping=aes(x=TF, y=TN), linetype=2, colour="black", method="loess") +
       geom_point(data = adata, mapping = aes(x = TF, y = TN - TNmed))
-
+    
     p9 <- ggplot() +
       labs(title = "", y = "fTN " ~ (mg ~ L^{-1}), x = "", colour = "Percentile") +
       theme_cowplot() +
@@ -1089,9 +1130,16 @@ for (i in rows) {
     blank <- ggdraw()
     plotall <- plot_grid(title, blank, p4r3, p5r3, ncol = 2, rel_heights = c(0.1, 1), align = "v")
     # print(plotall)
+    file_name <- paste(out_path, setname, "_concflow.png", sep = "")
+    save_plot(file_name, plotall, base_height = 5, base_width = 8)
+    
+    title <- ggdraw() + draw_label(catchname, fontface = "bold")
+    blank <- ggdraw()
+    plotall <- plot_grid(title, blank, p4r4, p5r4, ncol = 2, rel_heights = c(0.1, 1), align = "v")
+    # print(plotall)
     file_name <- paste(out_path, setname, "_residflow.png", sep = "")
     save_plot(file_name, plotall, base_height = 5, base_width = 8)
-
+    
     title <- ggdraw() + draw_label(catchname, fontface = "bold")
     plotall <- plot_grid(title, p6, p7, p8, p9, p10, p11, ncol = 1, rel_heights = c(0.3, 1, 1, 1, 1, 1, 1), align = "v")
     # print(plotall)

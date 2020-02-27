@@ -50,7 +50,7 @@ stan_pars_raw <- c('medb0raw', 'medb1raw', 'medb2raw', 'medd1raw', 'meda2raw',
                    'chem2fastrawb1', 'chem2medrawb1', 'chem2slowrawb1',
                    'chem1fastrawb2', 'chem1medrawb2', 'chem1slowrawb2', 
                    'chem2fastrawb2', 'chem2medrawb2', 'chem2slowrawb2')
-stan_pars_scale <- c(1, 1, 1, ((-0.1*log(1-0.99)) - (-0.1*log(1-0.1))) * 10, 1, # NOTE -ln(1-a) needs special scaling
+stan_pars_scale <- c(1, 1, 1, ((-0.1*log(1-0.99)) - (-0.1*log(1-0.5))) * 10, 1, # NOTE -ln(1-a) needs special scaling
                      1, 1, 1, ((-0.1*log(1-0.9999)) - (-0.1*log(1-0.99))) * 10, 1, # NOTE -ln(1-a) needs special scaling
                      2, 2, 2, 12, 12, 12,
                      2, 2, 2, 12, 12, 12,
@@ -103,8 +103,8 @@ priortab <- tibble(
 if (FALSE){
   # distribition parameters to report for paper
   medd1raw <- c(0, 0.4, 1)
-  ((-0.1*log(1-0.99)) - (-0.1*log(1-0.1))) * priorwide * 10
-  medd1scale = (-0.1*log(1-0.1)) + ((-0.1*log(1-0.99)) - (-0.1*log(1-0.1))) * medd1raw
+  ((-0.1*log(1-0.99)) - (-0.1*log(1-0.5))) * priorwide * 10
+  medd1scale = (-0.1*log(1-0.5)) + ((-0.1*log(1-0.99)) - (-0.1*log(1-0.5))) * medd1raw
   abs(medd1scale)*10
   meda1 = (1-exp(-abs(medd1scale)*10))
   
